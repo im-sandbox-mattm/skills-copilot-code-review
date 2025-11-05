@@ -188,7 +188,10 @@ document.addEventListener("DOMContentLoaded", () => {
         announcementStartInput.value = ann.start_date || "";
         announcementForm.querySelector("#save-announcement-btn").textContent = "Update";
       }
-    } catch {}
+    } catch (err) {
+      console.error("Error loading announcement for editing:", err);
+      announcementModalMessage.textContent = "Error loading announcement for editing.";
+    }
   }
 
   // Save (add or update) announcement
