@@ -241,11 +241,22 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: currentUser.username })
       });
-      if (!res.ok) throw new Error("Failed to delete");
+      if (!res.ok) {
+        let errorMsg = `Failed to delete (status ${res.status})`;
+        try {
+          const data = await res.json();
+          if (data && data.error) {
+            errorMsg += `: ${data.error}`;
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+        throw new Error(errorMsg);
+      }
       loadAnnouncements();
       announcementModalMessage.textContent = "Announcement deleted.";
-    } catch {
-      announcementModalMessage.textContent = "Error deleting announcement.";
+    } catch (err) {
+      announcementModalMessage.textContent = `Error deleting announcement. ${err && err.message ? err.message : ""}`;
     }
   }
 
