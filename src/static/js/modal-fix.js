@@ -64,7 +64,10 @@
     const closeSelectors = ['[data-dismiss="modal"]', '.modal-close', '.close', '.close-modal', '.js-modal-close'];
     closeSelectors.forEach(sel => {
       modal.querySelectorAll(sel).forEach(el => {
-        el.addEventListener('click', () => hideModal(modal));
+        el.addEventListener('click', () => {
+          const backdrop = document.querySelector('.__announcements-backdrop');
+          hideModal(modal, backdrop);
+        });
       });
     });
   }
