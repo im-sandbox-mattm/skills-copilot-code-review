@@ -21,17 +21,42 @@
       <div id="user-controls">
         <div id="user-status">
           <button id="login-button" class="icon-button">
-            <span class="user-icon">👤</span>
+            <span class="user-icon" aria-label="User" style="font-size:1.2em;">👤</span>
             <span>Login</span>
           </button>
           <div id="user-info" class="hidden">
             <span id="display-name"></span>
             <button id="logout-button">Logout</button>
+            <button id="manage-announcements-btn" class="icon-button hidden">
+              <span class="announcement-icon" aria-label="Announcements" style="font-size:1.2em;">📢</span>
+              <span>Manage Announcements</span>
+            </button>
           </div>
         </div>
       </div>
     </header>
 
+    <!-- Announcement Management Modal -->
+  <div id="announcement-modal" class="modal hidden">
+        <div class="modal-content announcement-modal-content hidden">
+        <span class="close-modal" id="close-announcement-modal">&times;</span>
+        <h2>Manage Announcements</h2>
+        <div id="announcement-list"></div>
+        <form id="announcement-form">
+          <input type="text" id="announcement-message" placeholder="Announcement message" required />
+          <label>
+            Expiration Date:
+            <input type="date" id="announcement-expiration" required />
+          </label>
+          <label>
+            Start Date (optional):
+            <input type="date" id="announcement-start" />
+          </label>
+          <button type="submit" id="save-announcement-btn">Save</button>
+        </form>
+        <div id="announcement-modal-message"></div>
+      </div>
+    </div>
     <main>
       <section id="activities-container">
         <div class="main-content-layout">
@@ -137,6 +162,9 @@
       </div>
     </div>
 
+    <!-- scripts -->
+    <script src="js/modal-fix.js"></script>
+    <!-- Load the main app script (app.js) which contains the activities loading logic -->
     <script src="app.js"></script>
   </body>
 </html>
