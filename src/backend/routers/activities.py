@@ -109,7 +109,7 @@ def update_announcement(
     if not is_authenticated(username):
         raise HTTPException(status_code=401, detail="Authentication required")
     try:
-        exp = datetime.strptime(expiration_date, "%Y-%m-%d")
+        _ = datetime.strptime(expiration_date, "%Y-%m-%d")
         if start_date:
             datetime.strptime(start_date, "%Y-%m-%d")
     except ValueError:
