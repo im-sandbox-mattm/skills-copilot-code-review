@@ -82,7 +82,10 @@
     attachCloseHandlers(modal);
     // Close when clicking outside
     window.addEventListener('click', (e) => {
-      if (e.target === modal) hideModal(modal);
+      if (e.target === modal) {
+        const backdrop = document.querySelector('.__announcements-backdrop');
+        hideModal(modal, backdrop);
+      }
     });
   }
 
