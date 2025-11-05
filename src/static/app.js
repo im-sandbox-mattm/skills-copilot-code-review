@@ -223,8 +223,12 @@ document.addEventListener("DOMContentLoaded", () => {
       resetAnnouncementForm();
       loadAnnouncements();
       announcementModalMessage.textContent = "Announcement saved.";
-    } catch {
-      announcementModalMessage.textContent = "Error saving announcement.";
+    } catch (err) {
+      let errorMsg = "Error saving announcement.";
+      if (err && err.message) {
+        errorMsg += " " + err.message;
+      }
+      announcementModalMessage.textContent = errorMsg;
     }
   });
 
