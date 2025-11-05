@@ -88,7 +88,7 @@ def create_announcement(
         datetime.strptime(expiration_date, "%Y-%m-%d")
         if start_date:
             datetime.strptime(start_date, "%Y-%m-%d")
-    except Exception:
+    except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format (YYYY-MM-DD)")
     doc = {"message": message, "expiration_date": expiration_date}
     if start_date:
