@@ -1,3 +1,119 @@
+/* Announcement Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000; /* raised so modal is above programmatic backdrops */
+}
+.modal.hidden {
+  display: none;
+}
+.announcement-modal-content {
+  background: var(--surface);
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  min-width: 350px;
+  max-width: 500px;
+  width: 100%;
+  position: relative;
+  z-index: 3001;
+}
+.close-modal {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--primary-dark);
+  background: none;
+  border: none;
+}
+#announcement-list {
+  margin-bottom: 1.5rem;
+}
+.announcement-item {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.announcement-message {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--primary-dark);
+}
+.announcement-dates {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 1.5rem;
+}
+.announcement-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+.announcement-actions button {
+  background: var(--primary-light);
+  color: var(--primary-text);
+  border: none;
+  border-radius: 4px;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+.announcement-actions button:hover {
+  background: var(--primary);
+}
+#announcement-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-bottom: 0.5rem;
+}
+#announcement-form input[type="text"],
+#announcement-form input[type="date"] {
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+#save-announcement-btn {
+  background: var(--secondary);
+  color: var(--secondary-text);
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s;
+}
+#save-announcement-btn:hover {
+  background: var(--secondary-dark);
+}
+#announcement-modal-message {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary); /* neutral by default */
+}
+#announcement-modal-message.success {
+  color: var(--success);
+}
+#announcement-modal-message.error {
+  color: var(--error);
+}
 /* Color palette */
 :root {
   /* Primary colors */
@@ -406,7 +522,7 @@ button {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 3000; /* keep consistent */
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -426,6 +542,7 @@ button {
   transition: transform 0.3s ease;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--border);
+  z-index: 3001;
 }
 
 .modal.show .modal-content {

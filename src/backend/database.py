@@ -2,56 +2,27 @@
 MongoDB database configuration and setup for Mergington High School API
 """
 
+import os
+import logging
 from pymongo import MongoClient
 from argon2 import PasswordHasher, exceptions as argon2_exceptions
 
+# Use environment variable for MongoDB URI with a sensible default
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
+
+# Configure basic logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Connect to MongoDB
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient(MONGO_URI)
 db = client['mergington_high']
 activities_collection = db['activities']
 teachers_collection = db['teachers']
+announcements_collection = db['announcements']
 
 # Methods
 
-
-def hash_password(password):
-    """Hash password using Argon2"""
-    ph = PasswordHasher()
-    return ph.hash(password)
-
-
-def verify_password(hashed_password: str, plain_password: str) -> bool:
-    """Verify a plain password against an Argon2 hashed password.
-
-    Returns True when the password matches, False otherwise.
-    """
-    ph = PasswordHasher()
-    try:
-        ph.verify(hashed_password, plain_password)
-        return True
-    except argon2_exceptions.VerifyMismatchError:
-        return False
-    except Exception:
-        # For any other exception (e.g., invalid hash), treat as non-match
-        return False
-
-
-def init_database():
-    """Initialize database if empty"""
-
-    # Initialize activities if empty
-    if activities_collection.count_documents({}) == 0:
-        for name, details in initial_activities.items():
-            activities_collection.insert_one({"_id": name, **details})
-
-    # Initialize teacher accounts if empty
-    if teachers_collection.count_documents({}) == 0:
-        for teacher in initial_teachers:
-            teachers_collection.insert_one(
-                {"_id": teacher["username"], **teacher})
-
-
-# Initial database if empty
 initial_activities = {
     "Chess Club": {
         "description": "Learn strategies and compete in chess tournaments",
@@ -184,8 +155,38 @@ initial_activities = {
         },
         "max_participants": 16,
         "participants": ["william@mergington.edu", "jacob@mergington.edu"]
+        }
     }
-}
+
+initial_announcements = [
+    {
+        "message": "Welcome to Mergington High! Check out the new activities.",
+        "expiration_date": "2025-12-31",
+        "start_date": "2025-11-01"
+    }
+]
+
+def hash_password(password):
+    """Hash password using Argon2"""
+    ph = PasswordHasher()
+    return ph.hash(password)
+
+
+def verify_password(hashed_password: str, plain_password: str) -> bool:
+    """Verify a plain password against an Argon2 hashed password.
+
+    Returns True when the password matches, False otherwise.
+    """
+    ph = PasswordHasher()
+    try:
+        ph.verify(hashed_password, plain_password)
+        return True
+    except argon2_exceptions.VerifyMismatchError:
+        return False
+    except Exception:
+        # For any other exception (e.g., invalid hash), treat as non-match
+        return False
+
 
 initial_teachers = [
     {
@@ -207,3 +208,33 @@ initial_teachers = [
         "role": "admin"
     }
 ]
+
+
+def init_database():
+    """Initialize database if empty"""
+    try:
+        # Initialize activities if empty
+        if activities_collection.count_documents({}) == 0:
+            logger.info("Seeding activities collection")
+            for name, details in initial_activities.items():
+                activities_collection.insert_one({"_id": name, **details})
+
+        # Initialize teacher accounts if empty
+        if teachers_collection.count_documents({}) == 0:
+            logger.info("Seeding teachers collection")
+            for teacher in initial_teachers:
+                teachers_collection.insert_one({"_id": teacher["username"], **teacher})
+
+        # Initialize announcements if empty (separate check)
+        if announcements_collection.count_documents({}) == 0:
+            logger.info("Seeding announcements collection")
+            for ann in initial_announcements:
+                announcements_collection.insert_one(ann)
+
+    except Exception as e:
+        # Log errors server-side only per backend guidelines
+        logger.exception("Error initializing database: %s", e)
+
+
+# Ensure example content is available when this module is loaded
+init_database()

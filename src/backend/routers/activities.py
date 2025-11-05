@@ -2,11 +2,13 @@
 Endpoints for the High School Management System API
 """
 
-from fastapi import APIRouter, HTTPException, Query
+
+from fastapi import APIRouter, HTTPException, Query, Body
 from fastapi.responses import RedirectResponse
 from typing import Dict, Any, Optional, List
+from datetime import datetime
+from ..database import activities_collection, teachers_collection, announcements_collection
 
-from ..database import activities_collection, teachers_collection
 
 router = APIRouter(
     prefix="/activities",
@@ -14,39 +16,126 @@ router = APIRouter(
 )
 
 
+# --- Activities listing endpoint ---
 @router.get("", response_model=Dict[str, Any])
-@router.get("/", response_model=Dict[str, Any])
-def get_activities(
-    day: Optional[str] = None,
-    start_time: Optional[str] = None,
-    end_time: Optional[str] = None
+def list_activities(
+    day: Optional[str] = Query(None),
+    start_time: Optional[str] = Query(None),
+    end_time: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
+    """Return all activities as a mapping of name -> details.
+
+    Supports optional filtering by day and by a start/end time range.
+    The time comparison expects HH:MM strings (24-hour) which matches the
+    seeded `schedule_details.start_time`/`end_time` format.
     """
-    Get all activities with their details, with optional filtering by day and time
+    results: Dict[str, Any] = {}
 
-    - day: Filter activities occurring on this day (e.g., 'Monday', 'Tuesday')
-    - start_time: Filter activities starting at or after this time (24-hour format, e.g., '14:30')
-    - end_time: Filter activities ending at or before this time (24-hour format, e.g., '17:00')
-    """
-    # Build the query based on provided filters
-    query = {}
+    for a in activities_collection.find({}):
+        name = a.get("_id") or a.get("name")
+        details = {k: v for k, v in a.items() if k != "_id"}
 
-    if day:
-        query["schedule_details.days"] = {"$in": [day]}
+        # Filter by day if requested
+        if day:
+            sd = a.get("schedule_details") or {}
+            days = sd.get("days", [])
+            if day not in days:
+                continue
 
-    if start_time:
-        query["schedule_details.start_time"] = {"$gte": start_time}
+        # Filter by start/end time if requested
+        if start_time and end_time:
+            sd = a.get("schedule_details")
+            if not sd:
+                continue
+            s = sd.get("start_time")
+            e = sd.get("end_time")
+            if not s or not e:
+                continue
+            # Simple lexicographic compare works for HH:MM format
+            if s < start_time or e > end_time:
+                continue
 
-    if end_time:
-        query["schedule_details.end_time"] = {"$lte": end_time}
+        results[name] = details
 
-    # Query the database
-    activities = {}
-    for activity in activities_collection.find(query):
-        name = activity.pop('_id')
-        activities[name] = activity
+    return results
 
-    return activities
+# --- Announcement Endpoints ---
+def is_authenticated(username: str) -> bool:
+    teacher = teachers_collection.find_one({"_id": username})
+    return teacher is not None
+
+@router.get("/announcements", response_model=List[Dict[str, Any]])
+def get_announcements() -> List[Dict[str, Any]]:
+    """Get all announcements (active and expired)"""
+    return [
+        {**a, "_id": str(a.get("_id", ""))}
+        for a in announcements_collection.find({})
+    ]
+
+@router.post("/announcements", response_model=Dict[str, Any])
+def create_announcement(
+    username: str = Body(...),
+    message: str = Body(...),
+    expiration_date: str = Body(...),
+    start_date: str = Body(None)
+) -> Dict[str, Any]:
+    """Create a new announcement (signed-in users only)"""
+    if not is_authenticated(username):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    if not message or not expiration_date:
+        raise HTTPException(status_code=400, detail="Message and expiration date required")
+    try:
+        datetime.strptime(expiration_date, "%Y-%m-%d")
+        if start_date:
+            datetime.strptime(start_date, "%Y-%m-%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid date format (YYYY-MM-DD)")
+    doc = {"message": message, "expiration_date": expiration_date}
+    if start_date:
+        doc["start_date"] = start_date
+    result = announcements_collection.insert_one(doc)
+    doc["_id"] = str(result.inserted_id)
+    return doc
+
+@router.put("/announcements/{announcement_id}", response_model=Dict[str, Any])
+def update_announcement(
+    announcement_id: str,
+    username: str = Body(...),
+    message: str = Body(...),
+    expiration_date: str = Body(...),
+    start_date: str = Body(None)
+) -> Dict[str, Any]:
+    """Update an announcement (signed-in users only)"""
+    if not is_authenticated(username):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    try:
+        exp = datetime.strptime(expiration_date, "%Y-%m-%d")
+        if start_date:
+            datetime.strptime(start_date, "%Y-%m-%d")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid date format (YYYY-MM-DD)")
+    update_doc = {"message": message, "expiration_date": expiration_date}
+    if start_date:
+        update_doc["start_date"] = start_date
+    result = announcements_collection.update_one({"_id": announcement_id}, {"$set": update_doc})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    doc = announcements_collection.find_one({"_id": announcement_id})
+    doc["_id"] = str(doc["_id"])
+    return doc
+
+@router.delete("/announcements/{announcement_id}", response_model=Dict[str, Any])
+def delete_announcement(
+    announcement_id: str,
+    username: str = Body(...)
+) -> Dict[str, Any]:
+    """Delete an announcement (signed-in users only)"""
+    if not is_authenticated(username):
+        raise HTTPException(status_code=401, detail="Authentication required")
+    result = announcements_collection.delete_one({"_id": announcement_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    return {"_id": announcement_id, "deleted": True}
 
 
 @router.get("/days", response_model=List[str])
